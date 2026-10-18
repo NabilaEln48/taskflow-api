@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Alembic
+# (keep alembic/versions — migrations are source code, they must be committed)
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Pytest
+.pytest_cache/
+.coverage
+
+# Docker
+postgres_data/
