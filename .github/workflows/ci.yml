@@ -1,0 +1,38 @@
+# Continuous Integration: runs on every push and pull request.
+#
+# What it does, in order:
+#   1. Checks out the code on a fresh Ubuntu runner.
+#   2. Installs Python 3.12 and the project (with dev extras for pytest).
+#   3. Runs the test suite.
+#
+# Why no Postgres service here? The tests override get_db with an in-memory
+# SQLite database (see tests/conftest.py), so CI needs no database at all —
+# faster, cheaper, and one less flake source. Migrations are exercised
+# separately by hand (documented in the README).
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest -q
