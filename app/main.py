@@ -7,6 +7,7 @@ Docs at:   http://localhost:8000/docs  (interactive Swagger UI)
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.exceptions import register_exception_handlers
 from app.routers import auth, tasks
 
 app = FastAPI(
@@ -29,6 +30,8 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(tasks.router)
+
+register_exception_handlers(app)
 
 
 @app.get("/health", tags=["ops"])
