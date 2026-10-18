@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
 from app.database import get_db
-from app.models.task import Task
+from app.models.task import Task, TaskStatus
 from app.models.user import User
 from app.schemas.task import TaskCreate, TaskOut, TaskUpdate
 
@@ -57,16 +57,30 @@ def create_task(
 
 @router.get("", response_model=list[TaskOut])
 def list_tasks(
+    # Pagination: `skip`/`limit` are the simplest scheme and fine at this
+    # scale. (Cursor pagination wins for huge, fast-changing feeds — not here.)
+    skip: int = 0,
+    limit: int = 20,
+    # Optional filter: /tasks?status=done. None means "all statuses".
+    status: TaskStatus | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> list[Task]:
-    return list(
-        db.scalars(
-            select(Task)
-            .where(Task.owner_id == current_user.id)
-            .order_by(Task.created_at.desc())
-        )
+    # Guardrails: negative skip is nonsense; cap limit so one request can't
+    # ask for a million rows and melt the DB.
+    skip = max(skip, 0)
+    limit = min(max(limit, 1), 100)
+
+    query = (
+        select(Task)
+        .where(Task.owner_id == current_user.id)
+        .order_by(Task.created_at.desc())
+        .offset(skip)
+        .limit(limit)
     )
+    if status is not None:
+        query = query.where(Task.status == status.value)
+    return list(db.scalars(query))
 
 
 @router.get("/{task_id}", response_model=TaskOut)
