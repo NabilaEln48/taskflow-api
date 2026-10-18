@@ -1,0 +1,28 @@
+# Local Postgres for development. Run `docker compose up -d` once, then the
+# app connects with the default DATABASE_URL from app/config.py:
+#   postgresql+psycopg2://taskflow:taskflow@localhost:5432/taskflow
+#
+# The named volume `pgdata` keeps your data between restarts. The healthcheck
+# makes `depends_on` actually wait for Postgres to accept connections instead
+# of racing it (a classic "works on my machine" flake).
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: taskflow-db
+    environment:
+      POSTGRES_USER: taskflow
+      POSTGRES_PASSWORD: taskflow
+      POSTGRES_DB: taskflow
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskflow -d taskflow"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
